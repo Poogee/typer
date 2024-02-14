@@ -2,6 +2,26 @@
 #include <termios.h>
 #include <unistd.h>
 #include <vector>
+#include <fstream>
+#include <ctime>
+
+std::vector<std::string> ReadDictionary(const std::string& filename = "dictionary.txt") {
+    std::vector<std::string> words;
+    std::ifstream file(filename);
+
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << filename << std::endl;
+        return words;
+    }
+
+    std::string word;
+    while (file >> word) {
+        words.push_back(word);
+    }
+
+    file.close();
+    return words;
+}
 
 char GetChar() {
     char buf = 0;
@@ -27,9 +47,13 @@ char GetChar() {
     return buf;
 }
 
-void PrintText(const std::string& text, std::vector<int>& colors_of_letters) {
+void PrintText(const std::string& text, std::vector<int>& colors_of_letters, size_t& current_position) {
     std::cout << "\r\033[K";
     for (size_t i = 0; i < text.length(); ++i) {
+        if (i == current_position) {
+            std::cout << "\033[43;1m" << text[i] << "\033[0m";
+            continue;
+        }
         switch (colors_of_letters[i]) {
             case -1:
                 std::cout << "\033[31m" << text[i] << "\033[0m";
@@ -45,14 +69,25 @@ void PrintText(const std::string& text, std::vector<int>& colors_of_letters) {
     std::cout.flush();
 }
 
+std::string GenerateRandomText(const std::vector<std::string>& dictionary, const size_t length = 10) {
+    srand(time(NULL));
+    std::string text;
+    for (size_t i = 0; i < length; ++i) {
+        text += dictionary[rand() % dictionary.size()];
+        text += " ";
+    }
+    return text;
+}
+
 int main() {
     constexpr char BACKSPACE = 127;
-    std::string text = "Hello, World!";
+    std::string text = GenerateRandomText(ReadDictionary());
     char input_letter = 0;
-    char current_position = 0;
+    size_t current_position = 0;
     std::vector<int> colors_of_letters(text.length(), 0);
+
     while (current_position < text.length()) {
-        PrintText(text, colors_of_letters);
+        PrintText(text, colors_of_letters, current_position);
         input_letter = GetChar();
         if (input_letter == BACKSPACE) {
             if (current_position > 0) {
