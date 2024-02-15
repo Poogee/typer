@@ -52,7 +52,7 @@ void PrintText(const std::string& text, std::vector<int>& colors_of_letters, siz
     if (wpm != -1) {
         std::cout << "\033[2A";
         std::cout << "\r\033[2K";
-        std::cout << "\033[97mWPM: " << round(wpm) << "\033[0m" << std::endl;
+        std::cout << "\033[97mWPM: " << round(wpm) << "\033[0m";
         std::cout << "\033[2B";
     }
     std::cout << "\r\033[K";
