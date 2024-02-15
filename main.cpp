@@ -47,8 +47,16 @@ char GetChar() {
     return buf;
 }
 
-void PrintText(const std::string& text, std::vector<int>& colors_of_letters, size_t& current_position) {
+void PrintText(const std::string& text, std::vector<int>& colors_of_letters, size_t& current_position,
+               float wpm = -1.0f) {
+    if (wpm != -1) {
+        std::cout << "\033[2A";
+        std::cout << "\r\033[2K";
+        std::cout << "\033[97mWPM: " << round(wpm) << "\033[0m" << std::endl;
+        std::cout << "\033[2B";
+    }
     std::cout << "\r\033[K";
+
     for (size_t i = 0; i < text.length(); ++i) {
         if (i == current_position) {
             std::cout << "\033[43;1m" << text[i] << "\033[0m";
@@ -76,19 +84,41 @@ std::string GenerateRandomText(const std::vector<std::string>& dictionary, const
         text += dictionary[rand() % dictionary.size()];
         text += " ";
     }
+    text += dictionary[rand() % dictionary.size()];
     return text;
+}
+
+void Introduction(const std::string& text) {
+    std::cout << "\033[?25l";
+    std::cout << "Press any key to start typing \n" << std::endl;
+    std::cout << text;
+    std::cout.flush();
 }
 
 int main() {
     constexpr char BACKSPACE = 127;
-    std::string text = GenerateRandomText(ReadDictionary());
+    const std::string text = GenerateRandomText(ReadDictionary());
     char input_letter = 0;
     size_t current_position = 0;
+    float wpm = -1.0f;
     std::vector<int> colors_of_letters(text.length(), 0);
 
+    Introduction(text);
+    PrintText(text, colors_of_letters, current_position);
+
     while (current_position < text.length()) {
-        PrintText(text, colors_of_letters, current_position);
+
+        PrintText(text, colors_of_letters, current_position, wpm);
         input_letter = GetChar();
+        static auto start = std::chrono::high_resolution_clock::now();
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+        if (duration.count() < 1000) {
+            wpm = -1.0f;
+        } else {
+            wpm = (current_position / 5.0f) / (duration.count() / 60000.0f);
+        }
+
         if (input_letter == BACKSPACE) {
             if (current_position > 0) {
                 --current_position;
